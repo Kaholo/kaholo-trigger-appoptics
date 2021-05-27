@@ -1,0 +1,42 @@
+{
+  "name": "AppOptics-Trigger",
+  "type": "trigger",
+  "execProgram": "node",
+  "main": "app.js",
+  "imgUrl": "logo.png",
+  "version": "1.0.0",
+  "description": "Handles SolarWinds AppOptics Webhooks",
+  "methods": [
+    {
+      "name": "alertWebhook",
+      "route": "post /webhook/appoptics",
+      "viewName": "Alert",
+      "params": [
+        {
+          "name": "alertNamePat",
+          "viewName": "Alert Name",
+          "type": "string"
+        },
+        {
+          "name": "state",
+          "viewName": "State",
+          "type": "options",
+          "options": [
+            {
+              "id": "Both",
+              "name": "Both"
+            },
+            {
+              "id": "Active",
+              "name": "Active"
+            },
+            {
+              "id": "Cleared",
+              "name": "Cleared"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

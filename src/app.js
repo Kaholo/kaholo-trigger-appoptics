@@ -1,36 +1,29 @@
-const { findTriggers, parseLabels } = require(`./helpers`);
 const minimatch = require("minimatch");
 
-async function alertWebhook(req, res) {
-  const payload = JSON.parse(req.body.payload);
-  const alertName = payload.alert.name;
-  if (!alertName){
-    res.send("Bad AppOptics Webhook format");
-    console.error("Bad AppOptics Webhook format");
-    return;
+async function alertWebhook(req, res, settings, triggerControllers) {
+  if (!triggerControllers) {
+    return res.status(400).send("triggers cannot be nil");
   }
-  const isCleared = payload.clear === "normal";
-  findTriggers(
-    validateTrigger,
-    [alertName, isCleared],
-    payload, req.io, 
-    res,
-    "alertWebhook",
-    alertName
-  );
-}
+  try {
+    const payload = JSON.parse(req.body.payload);
+    const alertName = payload.alert.name;
+    if (!alertName){
+      return res.status(400).send("Bad AppOptics Webhook format");
+    }
+    const isCleared = payload.clear === "normal";
+    triggerControllers.forEach(trigger => {
+      const {alertNamePat, state} = trigger.params;
 
-function validateTrigger(trigger, [alertName, isCleared]) {
-  const alertNamePat = (trigger.params.find((o) => o.name === `alertNamePat`).value || "").trim();
-  const trigState = (trigger.params.find((o) => o.name === `state`).value || "All");
+      if (alertNamePat && !minimatch(alertName, alertNamePat)) return;
+      if (state === (isCleared ? "Active" : "Cleared")) return;
 
-  // Check if the alert name pattern was provided, and if so check it matches request
-  if (alertNamePat && !minimatch(alertName, alertNamePat)) {
-    throw `Not matching alert name`;
+      const msg = `${alertName} ${isCleared ? "Cleared" : "Active"}`;
+      trigger.execute(msg, payload);
+    });
+    res.status(200).send("OK");
   }
-  // Check if status was provided, and if so check it matches request
-  if (trigState !== "All" && isCleared == (trigState === "Cleared")) {
-    throw `Not matching state`;
+  catch (err){
+    res.status(422).send(err.message);
   }
 }
 

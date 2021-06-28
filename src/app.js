@@ -1,9 +1,6 @@
 const minimatch = require("minimatch");
 
 async function alertWebhook(req, res, settings, triggerControllers) {
-  if (!triggerControllers) {
-    return res.status(400).send("triggers cannot be nil");
-  }
   try {
     const payload = JSON.parse(req.body.payload);
     const alertName = payload.alert.name;
